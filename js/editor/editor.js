@@ -3,16 +3,24 @@
  * 仅支持手机端布局
  */
 
+// 未保存标记
+var isDirty = false;
+
 // 初始化编辑器
 function initEditor() {
     // 初始化 webbuilder
     webbuilder.init('#editor');
-    
+
     // 注册示例组件
     registerComponents();
-    
+
     // 绑定事件
     bindEvents();
+
+    // 注册变化回调
+    webbuilder.onChanged(function(action, data) {
+        isDirty = true;
+    });
 }
 
 /**
@@ -39,22 +47,22 @@ function registerComponents() {
         render: function(props) {
             var el = document.createElement('div');
             el.className = 'iot-gauge';
-            
+
             var valueEl = document.createElement('div');
             valueEl.className = 'value';
             valueEl.textContent = props.value + props.unit;
-            
+
             var labelEl = document.createElement('div');
             labelEl.className = 'label';
             labelEl.textContent = props.label;
-            
+
             el.appendChild(valueEl);
             el.appendChild(labelEl);
-            
+
             return el;
         }
     });
-    
+
     // 开关组件
     webbuilder.define('switch', {
         type: 'switch',
@@ -73,21 +81,21 @@ function registerComponents() {
         render: function(props) {
             var el = document.createElement('div');
             el.className = 'iot-switch';
-            
+
             var switchEl = document.createElement('div');
             switchEl.className = 'switch' + (props.state ? ' active' : '');
-            
+
             var labelEl = document.createElement('div');
             labelEl.className = 'label';
             labelEl.textContent = props.label;
-            
+
             el.appendChild(switchEl);
             el.appendChild(labelEl);
-            
+
             return el;
         }
     });
-    
+
     // 滑块组件
     webbuilder.define('slider', {
         type: 'slider',
@@ -110,24 +118,24 @@ function registerComponents() {
         render: function(props) {
             var el = document.createElement('div');
             el.className = 'iot-slider';
-            
+
             var labelEl = document.createElement('div');
             labelEl.className = 'label';
             labelEl.textContent = props.label + ': ' + props.value;
-            
+
             var inputEl = document.createElement('input');
             inputEl.type = 'range';
             inputEl.min = props.min;
             inputEl.max = props.max;
             inputEl.value = props.value;
-            
+
             el.appendChild(labelEl);
             el.appendChild(inputEl);
-            
+
             return el;
         }
     });
-    
+
     // 按钮组件
     webbuilder.define('button', {
         type: 'button',
@@ -148,7 +156,7 @@ function registerComponents() {
             return el;
         }
     });
-    
+
     // 数值显示组件
     webbuilder.define('value-display', {
         type: 'value-display',
@@ -169,18 +177,18 @@ function registerComponents() {
         render: function(props) {
             var el = document.createElement('div');
             el.className = 'iot-value-display';
-            
+
             var valueEl = document.createElement('div');
             valueEl.className = 'value';
             valueEl.textContent = props.value + props.unit;
-            
+
             var labelEl = document.createElement('div');
             labelEl.className = 'label';
             labelEl.textContent = props.label;
-            
+
             el.appendChild(valueEl);
             el.appendChild(labelEl);
-            
+
             return el;
         }
     });
@@ -195,41 +203,46 @@ function bindEvents() {
         var jsonb = webbuilder.toJSONB();
         var jsonStr = JSON.stringify(jsonb, null, 2);
         downloadFile('canvas-config.json', jsonStr, 'application/json');
+        isDirty = false;
     });
-    
+
     // 加载 JSONB
     document.getElementById('btn-load').addEventListener('click', function() {
+        if (isDirty && !confirm('当前有未保存的更改，确定要加载新文件吗？')) {
+            return;
+        }
         document.getElementById('file-input').click();
     });
-    
+
     document.getElementById('file-input').addEventListener('change', function(e) {
         var file = e.target.files[0];
         if (!file) return;
-        
+
         var reader = new FileReader();
         reader.onload = function(e) {
             try {
                 var jsonb = JSON.parse(e.target.result);
                 webbuilder.fromJSONB(jsonb);
+                isDirty = false;
             } catch (err) {
                 alert('加载失败：' + err.message);
             }
         };
         reader.readAsText(file);
-        
+
         // 清空文件输入
         this.value = '';
     });
-    
+
     // 导出 HTML
     document.getElementById('btn-export').addEventListener('click', function() {
         // 创建一个临时 div 来渲染
         var tempDiv = document.createElement('div');
         document.body.appendChild(tempDiv);
-        
+
         // 调用 renderToDiv 获取组件列表
         var components = webbuilder.renderToDiv(tempDiv);
-        
+
         // 生成 HTML
         var config = webbuilder.getCanvasConfig();
         var html = '<!DOCTYPE html>\n<html>\n<head>\n<meta charset="UTF-8">\n';
@@ -251,25 +264,29 @@ function bindEvents() {
         }), null, 2) + ';\n';
         html += '</script>\n';
         html += '</body>\n</html>';
-        
+
         // 移除临时 div
         document.body.removeChild(tempDiv);
-        
+
         showPreview(html);
     });
-    
+
     // 清空画布
     document.getElementById('btn-clear').addEventListener('click', function() {
+        if (isDirty && !confirm('当前有未保存的更改，确定要清空画布吗？')) {
+            return;
+        }
         if (confirm('确定要清空画布吗？')) {
             webbuilder.clear();
+            isDirty = true;
         }
     });
-    
+
     // 预览弹窗关闭
     document.querySelector('.modal-close').addEventListener('click', function() {
         document.getElementById('preview-modal').style.display = 'none';
     });
-    
+
     // 复制代码
     document.getElementById('btn-copy').addEventListener('click', function() {
         var code = document.getElementById('preview-code').textContent;
@@ -277,11 +294,19 @@ function bindEvents() {
             alert('已复制到剪贴板');
         });
     });
-    
+
     // 下载文件
     document.getElementById('btn-download').addEventListener('click', function() {
         var code = document.getElementById('preview-code').textContent;
         downloadFile('page.html', code, 'text/html');
+    });
+
+    // 页面离开提示
+    window.addEventListener('beforeunload', function(e) {
+        if (isDirty) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
     });
 }
 

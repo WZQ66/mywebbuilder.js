@@ -9,9 +9,11 @@ IoT 可视化编辑器库 - 基于网格布局的拖拽式页面构建器
 - 📱 固定手机比例画布（375×812）
 - 📐 网格布局，单元格 1:1 正方形
 - 🖱️ 拖拽添加、移动组件
+- ⌨️ Delete/Backspace键删除选中组件
 - ⚙️ 属性面板，实时预览
 - 💾 JSONB 格式保存/加载
 - 🎨 自定义组件支持
+- 🔔 变化回调通知
 
 ## 项目结构
 
@@ -21,10 +23,10 @@ IoT 可视化编辑器库 - 基于网格布局的拖拽式页面构建器
 │   ├── webbuilder.js         # 主文件
 │   └── types/                # 内部模块
 ├── editor.html               # 示例编辑器
-├── js/editor/editor.js       # 示例编辑器逻辑
-├── css/editor.css            # 示例编辑器样式
-├── README.md                 # 中文文档
-└── README_EN.md              # English
+├── js/editor/editor.js      # 示例编辑器逻辑
+├── css/editor.css           # 示例编辑器样式
+├── README.md                # 中文文档
+└── README_EN.md            # English
 ```
 
 > **注意**: `editor.html` 和 `js/editor/` 是示例代码，展示如何使用本库。
@@ -112,10 +114,28 @@ webbuilder.define(name, definition)
     defaultColumnSpan: 6,             // 默认跨列数
     defaultRowSpan: 4,                // 默认跨行数
     defaultProps: { ... },            // 默认属性
-    traits: [ ... ],                  // 属性定义（用于属性面板）
+    traits: [ ... ],                 // 属性定义（用于属性面板）
     render: function(props) { ... }   // 渲染函数，返回 DOM 元素
 }
 ```
+
+### 注册变化回调
+
+```javascript
+webbuilder.onChanged(function(action, data) {
+    // action: 'add' | 'delete' | 'move' | 'update' | 'load' | 'clear'
+    // data: 相关数据（组件实例、组件ID等）
+});
+```
+
+| action | 说明 | data |
+|--------|------|------|
+| add | 添加组件 | 组件实例对象 |
+| delete | 删除组件 | { id: 组件ID } |
+| move | 移动组件 | 组件实例对象 |
+| update | 属性面板修改属性 | 组件实例对象 |
+| load | 加载JSONB | { count: 组件数量 } |
+| clear | 清空画布 | null |
 
 ### 导出 JSONB
 
@@ -176,7 +196,7 @@ var components = webbuilder.renderToDiv(container);
     {
         element: HTMLElement,   // 组件 DOM 元素
         wrapper: HTMLElement,   // 包装容器
-        props: { ... },         // 组件属性（深拷贝）
+        props: { ... },          // 组件属性（深拷贝）
         id: 'gauge-1',
         type: 'gauge'
     }
