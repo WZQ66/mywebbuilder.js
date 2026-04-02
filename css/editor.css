@@ -189,6 +189,8 @@ body {
     border-radius: 4px;
     transition: border-color 0.3s;
     cursor: move;
+    position: relative;
+    overflow: visible;
 }
 
 .webbuilder-component:hover {
@@ -198,6 +200,67 @@ body {
 .webbuilder-component.selected {
     border-color: #1890ff;
     box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* 尺寸控制柄容器 */
+.resize-handles-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* 尺寸控制柄 */
+.resize-handle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #1890ff;
+    border: 1px solid #fff;
+    border-radius: 2px;
+    pointer-events: auto;
+    z-index: 11;
+    box-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+}
+
+.resize-handle:hover {
+    background: #40a9ff;
+    transform: scale(1.2);
+}
+
+.resize-handle-nw {
+    cursor: nwse-resize;
+}
+
+.resize-handle-n {
+    cursor: ns-resize;
+}
+
+.resize-handle-ne {
+    cursor: nesw-resize;
+}
+
+.resize-handle-w {
+    cursor: ew-resize;
+}
+
+.resize-handle-e {
+    cursor: ew-resize;
+}
+
+.resize-handle-sw {
+    cursor: nesw-resize;
+}
+
+.resize-handle-s {
+    cursor: ns-resize;
+}
+
+.resize-handle-se {
+    cursor: nwse-resize;
 }
 
 /* 属性面板 */
